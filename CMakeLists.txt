@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   gazebo_ros
   rospy
   map_server
+  kobuki_control
 )
 
 ## System dependencies are found with CMake's conventions

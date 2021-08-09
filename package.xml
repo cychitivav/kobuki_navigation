@@ -55,16 +55,19 @@
   <build_depend>gazebo_ros</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>map_server</build_depend>
+  <build_depend>kobuki_control</build_depend>
 
   <build_export_depend>costmap_2d</build_export_depend>
   <build_export_depend>gazebo_ros</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>map_server</build_export_depend>
+  <build_export_depend>kobuki_control</build_export_depend>
 
   <exec_depend>costmap_2d</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>map_server</exec_depend>
+  <exec_depend>kobuki_control</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

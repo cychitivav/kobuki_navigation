@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- ************************************************************************ -->
+    <!-- Define world -->
+    <arg name="world_name" default="$(find kobuki_control)worlds/taller2.world" />
+
+    <!-- ************************************************************************ -->
+    <!-- Launch Gazebo-->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world_name)" />
+        <arg name="use_sim_time" value="true" />
+        <arg name="debug" value="false" />
+        <arg name="paused" value="false" />
+    </include>
+
+    <!-- ************************************************************************ -->
+    <!-- Spawn Robot-->
+
+    <!-- Robot initial pose -->
+    <arg name="x" default="0.0" />
+    <arg name="y" default="0.0" />
+    <arg name="yaw" default="$(eval -pi/2)" />
+
+    <param name="x" value="$(arg x)"/>
+    <param name="y" value="$(arg y)"/>
+    <param name="yaw" value="$(arg yaw)"/>
+
+    <arg name="robot_name" value="kobuki"/>
+
+    <param name="robot_description" command="$(find xacro)/xacro '$(find kobuki_description)/urdf/kobuki_standalone.urdf.xacro'" />
+
+    <node pkg="gazebo_ros" type="spawn_model" name="spawn_$(arg robot_name)" args="
+            -x $(arg x) -y $(arg y) -Y $(arg yaw)
+            -urdf -param robot_description 
+            -model $(arg robot_name)" respawn="false"></node>
+    
+    <!-- ************************************************************************ -->
+    <!-- State Publisher -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" />
+
+    <!-- ************************************************************************ -->
+    <!-- RViz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find kobuki_navigation)/rviz/rviz.rviz" />
+
+    <!-- ************************************************************************ -->
+    <!-- Control node -->
+    <node name="control" pkg="kobuki_control" output="screen" type="controlo.py"/>
+
+    <!-- ************************************************************************ -->
+    <!-- Map server node -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find kobuki_navigation)/config/data_map.yaml" />
+
+    <!-- ************************************************************************ -->
+    <!-- Path node -->
+    <node name="gen_path" pkg="kobuki_navigation" output="screen" type="path_generator.py"/>
+
+</launch>

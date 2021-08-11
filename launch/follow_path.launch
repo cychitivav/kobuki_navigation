@@ -21,10 +21,6 @@
     <arg name="y" default="0.0" />
     <arg name="yaw" default="$(eval -pi)" />
 
-    <param name="x" value="$(arg x)"/>
-    <param name="y" value="$(arg y)"/>
-    <param name="yaw" value="$(arg yaw)"/>
-
     <arg name="robot_name" value="kobuki"/>
 
     <param name="robot_description" command="$(find xacro)/xacro '$(find kobuki_description)/urdf/kobuki_standalone.urdf.xacro'" />
@@ -32,7 +28,11 @@
     <node pkg="gazebo_ros" type="spawn_model" name="spawn_$(arg robot_name)" args="
             -x $(arg x) -y $(arg y) -Y $(arg yaw)
             -urdf -param robot_description 
-            -model $(arg robot_name)" respawn="false"></node>
+            -model $(arg robot_name)" respawn="false"/>
+
+    <!-- ************************************************************************ -->
+    <!-- Odom transform-->
+    <node pkg="tf" type="static_transform_publisher" name="map_tf" args="$(arg x) $(arg y) 0 $(arg yaw) 0 0 /map /odom 100"/>
     
     <!-- ************************************************************************ -->
     <!-- State Publisher -->

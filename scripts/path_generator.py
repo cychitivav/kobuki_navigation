@@ -9,63 +9,20 @@ from tf_conversions import transformations as tf
 
 class generator:
     def __init__(self):
-        self.yaw_0 = rospy.get_param("yaw")
-        self.x_0 = rospy.get_param("x")
-        self.y_0 = rospy.get_param("y")
-
-        self.set_initial_pose()
-
-        self.pub = rospy.Publisher('/path', Path, queue_size=10)
+        self.pub = rospy.Publisher('/plan', Path, queue_size=10)
         self.sub = rospy.Subscriber('/clicked_point', PointStamped, self.calc_path)
 
     def calc_path(self, goal):   
-        x_g = goal.point.x
-        y_g = goal.point.y
-
-        path = [[-3.5, 0.0],
-                [-3.5, 3.5],
-                [1.5, 3.5],
-                [1.5, -1.5],
-                [3.5, -1.5],
-                [3.5, -8.0],
-                [-2.5, -8.0],
-                [-2.5, -5.5],
-                [1.5, -5.5],
-                [1.5, -3.5],
-                [-1.0, -3.5]]
+        pose = PoseStamped()
+        pose.pose.position.x = goal.point.x
+        pose.pose.position.y = goal.point.y 
 
         msg = Path()
-        msg.header.frame_id = "odom"
+        msg.header.frame_id = "map"
         msg.header.stamp = rospy.Time.now()
-
-        for wp in path:
-            pose = PoseStamped()
-
-            pose.pose.position.x = wp[0]*np.cos(-self.yaw_0) - wp[1]*np.sin(-self.yaw_0)
-            pose.pose.position.y = wp[0]*np.sin(-self.yaw_0) + wp[1]*np.cos(-self.yaw_0)
-
-            msg.poses.append(pose)
+        msg.poses.append(pose)
 
         self.pub.publish(msg)
-
-    
-    def set_initial_pose(self):
-        trans = TransformStamped()
-        trans.header.stamp = rospy.Time.now()
-        trans.header.frame_id = "map"
-        trans.child_frame_id = "odom"        
-
-        trans.transform.translation.x = self.x_0
-        trans.transform.translation.y = self.y_0
-
-        quat = tf.quaternion_from_euler(0.0,0.0,self.yaw_0)
-        trans.transform.rotation.x = quat[0]
-        trans.transform.rotation.y = quat[1]
-        trans.transform.rotation.z = quat[2]
-        trans.transform.rotation.w = quat[3]
-
-        broadcaster=tf2_ros.StaticTransformBroadcaster()
-        broadcaster.sendTransform(trans)
 
 if __name__ == '__main__':
     rospy.init_node('path_gen', anonymous=True)

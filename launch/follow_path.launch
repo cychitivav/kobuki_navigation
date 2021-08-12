@@ -58,9 +58,10 @@
 
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
         <rosparam file="$(find kobuki_navigation)/config/costmap_params.yaml" command="load"/> 
-        <rosparam file="$(find kobuki_navigation)/config/base_local_planner_params.yaml" command="load" />
+        <!-- <rosparam file="$(find kobuki_navigation)/config/base_local_planner_params.yaml" command="load" /> -->
 
-        <!-- <remap from="/move_base/TrajectoryPlannerROS/global_plan" to="/plan"/> -->
+        <remap from="/move_base/NavfnROS/plan" to="/plan"/>
+        <!-- <remap from="/cmd_vel" to="/mobile_base/commands/velocity"/> -->
     </node>
 
     

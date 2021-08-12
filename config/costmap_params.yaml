@@ -1,14 +1,21 @@
 global_costmap:
   global_frame: map
   robot_base_frame: base_footprint
-  update_frequency: 5.0
+  update_frequency: 10.0
   static_map: true
   # Robot appareance parameters
   footprint: [[-0.18, -0.18], [-0.18, 0.18], [0.18, 0.18], [0.18, -0.18]]
   robot_radius: 0.177
-  inflation_radius: 0.25
-
-  # Inflation paramaters
-  #cost_scaling_factor: 3.0
+  inflation_radius: 0.3
 
   map_type: costmap
+
+local_costmap:
+  global_frame: odom
+  robot_base_frame: base_footprint
+  update_frequency: 10.0
+  publish_frequency: 10.0
+  static_map: false
+  rolling_window: true
+  width: 0.0
+  height: 0.0

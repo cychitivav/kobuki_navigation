@@ -2,7 +2,9 @@
 <launch>
     <!-- ************************************************************************ -->
     <!-- Define world -->
-    <arg name="world_name" default="$(find kobuki_control)worlds/taller2.world" />
+    <arg name="world_name" default="$(find kobuki_control)worlds/maze.world" />
+    <!-- Map -->
+    <arg name="map_file" default="$(find kobuki_navigation)/maps/data_map.yaml"/>
 
     <!-- ************************************************************************ -->
     <!-- Launch Gazebo-->
@@ -17,7 +19,7 @@
     <!-- Spawn Robot-->
 
     <!-- Robot initial pose -->
-    <arg name="x" default="0.0" />
+    <arg name="x" default="-0.4" />
     <arg name="y" default="0.0" />
     <arg name="yaw" default="$(eval -pi)" />
 
@@ -32,7 +34,7 @@
 
     <!-- ************************************************************************ -->
     <!-- Odom transform-->
-    <node pkg="tf" type="static_transform_publisher" name="map_tf" args="$(arg x) $(arg y) 0 $(arg yaw) 0 0 /map /odom 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_odom" args="$(arg x) $(arg y) 0 $(arg yaw) 0 0 map odom 33"/>
     
     <!-- ************************************************************************ -->
     <!-- State Publisher -->
@@ -48,10 +50,18 @@
 
     <!-- ************************************************************************ -->
     <!-- Map server node -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(find kobuki_navigation)/config/data_map.yaml" />
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
     <!-- ************************************************************************ -->
     <!-- Path node -->
-    <node name="gen_path" pkg="kobuki_navigation" output="screen" type="path_generator.py"/>
+    <!-- <node name="gen_path" pkg="kobuki_navigation" output="screen" type="path_generator.py"/> -->
 
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+        <rosparam file="$(find kobuki_navigation)/config/costmap_params.yaml" command="load"/> 
+        <rosparam file="$(find kobuki_navigation)/config/base_local_planner_params.yaml" command="load" />
+
+        <!-- <remap from="/move_base/TrajectoryPlannerROS/global_plan" to="/plan"/> -->
+    </node>
+
+    
 </launch>

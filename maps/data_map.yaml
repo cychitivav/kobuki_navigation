@@ -1,0 +1,7 @@
+image: rotated.pgm # Path
+resolution: 0.030000 # 0.05 m/pxl
+origin: [-17.61, -17.34, 0.0] # [x,y,yaw] lower-left pixel of image origin: [-578 pxl, -578 pxl, 8 deg]
+negate: 0 # White is free and black is occupied
+occupied_thresh: 0.65 # Umbral occupied
+free_thresh: 0.196 # Umbral free
+

@@ -2,7 +2,7 @@
 <launch>
     <!-- ************************************************************************ -->
     <!-- Define world -->
-    <arg name="world_name" default="$(find kobuki_control)worlds/taller2.world" />
+    <arg name="world_name" default="$(find kobuki_control)worlds/maze.world" />
 
     <!-- ************************************************************************ -->
     <!-- Launch Gazebo-->

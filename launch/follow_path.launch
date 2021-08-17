@@ -3,6 +3,8 @@
     <!-- ************************************************************************ -->
     <!-- Define world -->
     <arg name="world_name" default="$(find kobuki_control)worlds/maze.world" />
+    <!-- Define map -->
+    <arg name="map_file" default="$(find kobuki_navigation)/map/map.yaml" />
 
     <!-- ************************************************************************ -->
     <!-- Launch Gazebo-->
@@ -15,9 +17,8 @@
 
     <!-- ************************************************************************ -->
     <!-- Spawn Robot-->
-
     <!-- Robot initial pose -->
-    <arg name="x" default="0.0" />
+    <arg name="x" default="-1.0" />
     <arg name="y" default="0.0" />
     <arg name="yaw" default="$(eval -pi)" />
 
@@ -32,7 +33,7 @@
 
     <!-- ************************************************************************ -->
     <!-- Odom transform-->
-    <node pkg="tf" type="static_transform_publisher" name="map_tf" args="$(arg x) $(arg y) 0 $(arg yaw) 0 0 /map /odom 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="map_tf" args="$(arg x) $(arg y) 0 $(arg yaw) 0 0 map odom 30"/>
     
     <!-- ************************************************************************ -->
     <!-- State Publisher -->
@@ -47,11 +48,14 @@
     <node name="control" pkg="kobuki_control" output="screen" type="controlo.py"/>
 
     <!-- ************************************************************************ -->
-    <!-- Map server node -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(find kobuki_navigation)/config/data_map.yaml" />
-
-    <!-- ************************************************************************ -->
     <!-- Path node -->
     <node name="gen_path" pkg="kobuki_navigation" output="screen" type="path_generator.py"/>
+    <!-- <node name="gen_path" pkg="kobuki_navigation" output="screen" type="paths.py"/> -->
+
+    <!-- ************************************************************************ -->
+    <!-- Map server node -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+    
 
 </launch>

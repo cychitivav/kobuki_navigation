@@ -1,6 +1,6 @@
-image: map.pgm # Path
+image: rotated.pgm # Path
 resolution: 0.030000 # 0.03 m/pxl
-origin: [-17.365155, -13.085583, -0.139626] # [x,y,yaw] lower-left pixel of image origin: [-15.374998, -15.374998, 0.000000]
+origin: [-15.636, -15.408, 0.000000] # [x,y,yaw] lower-left pixel of image origin: [-521.2 pxl, -513.6 pxl, 0.0 deg]
 negate: 0 # White is free and black is occupied
 occupied_thresh: 0.65 # Umbral occupied
 free_thresh: 0.196 # Umbral free

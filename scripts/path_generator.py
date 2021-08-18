@@ -11,28 +11,71 @@ import cv2
 
 class generator:
     def __init__(self):
-        self.mapa = np.array([])
-        self.skel = np.array([])
+        self.img_map = np.array([])
+        self.thin = np.array([])
         
         self.pub = rospy.Publisher('/plan', Path, queue_size=10)
         
-        self.sub = rospy.Subscriber('/clicked_point', PointStamped, self.calc_path)
-        
+        self.sub = rospy.Subscriber('/clicked_point', PointStamped, self.calc_path)        
         self.sub_map = rospy.Subscriber('/map', OccupancyGrid, self.get_map)
-        self.pub_costmap = rospy.Publisher('/costmap', OccupancyGrid, queue_size=10)
         
         
+    def get_corners(self, img):
+        corner_regions = cv2.cornerHarris(img, 3, 3, 0.042)   
+        corner_regions = cv2.dilate(corner_regions, None)
+        _, corner_regions = cv2.threshold(corner_regions, 0.01, 255, cv2.THRESH_BINARY)
         
-        
-        
-    def calc_path(self, goal): 
-        pose = PoseStamped()
-        pose.pose.position.x = goal.point.x
-        pose.pose.position.y = goal.point.y 
+        corner_regions = np.uint8(corner_regions)        
+        contours, _ = cv2.findContours(corner_regions,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
+        corners = []
+        for i, c in enumerate(contours):
+            M = cv2.moments(c)
+            
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            
+            corners.append((cX,cY))
+            
+        return corners
+        
+        
+    def calc_path(self, goal):             
+        base_map = cv2.dilate(self.thin,None,iterations=4)
+        color_map = cv2.cvtColor(base_map,cv2.COLOR_GRAY2RGB)        
+        
+        corners = self.get_corners(self.thin)
+                  
+        no_black = cv2.countNonZero(base_map)
+        
+        G = nx.Graph()  
+        for i, p1 in enumerate(corners):
+            for j, p2 in enumerate(corners):
+                if p1 != p2:                                   
+                    line_img = cv2.line(colormap.copy(), p1, p2, (234,0,234), 1)
+                    
+                    if cv2.countNonZero(cv2.cvtColor(line_img,cv2.COLOR_BGR2GRAY)) == no_black: 
+                        G.add_edge(i,j,weight=np.hypot(p1[0]-p2[0], p1[1]-p2[1]))
+                    
+        vertexs = nx.shortest_path(G,30,19) # Punto más optimo de inicio
+        
         msg = Path()
         msg.header.frame_id = "map"
         msg.header.stamp = rospy.Time.now()
+        
+        pose = PoseStamped()        
+        pose.pose.position.x = x_0
+        pose.pose.position.y = y_0        
+        msg.poses.append(pose)
+        
+        for v in vertex:
+            pose.pose.position.x = corners[v,0] # Cambiar de coordenadas de imagen a coordenadas reales
+            pose.pose.position.y = corners[v,1]            
+
+            msg.poses.append(pose)
+
+        pose.pose.position.x = goal.point.y
+        pose.pose.position.y = goal.point.y
         msg.poses.append(pose)
 
         self.pub.publish(msg)
@@ -71,18 +114,18 @@ class generator:
                         im[i,j] = 0.0          
         return im
     
-    def get_skeleton(self, image):
+    def get_thinning(self, image):
         _, th = cv2.threshold(image, 245, 255, cv2.THRESH_BINARY)        
 
         kernel = cv2.getStructuringElement(cv2.MORPH_OPEN, (3,3)) 
         op = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel)
 
-        skel = cv2.ximgproc.thinning(op)
+        thin = cv2.ximgproc.thinning(op)
     
-        return skel
+        return thin
     
     def get_map(self, grid_map):
-        mapa = []
+        img_map = []
         row = []
         
         for i in range(len(grid_map.data)):
@@ -92,36 +135,15 @@ class generator:
                 row.append(grid_map.data[i])
         
             if (i+1) % grid_map.info.width == 0:
-                mapa.append(row)
+                img_map.append(row)
                 row = []
                 
-        mapa = np.array(mapa)/100.0*-255.0+255.0
-        self.mapa = mapa.astype(np.uint8)
+        img_map = np.array(img_map)/100.0 * -255.0 + 255.0
         
-        rotated = self.mapa.copy()#rotate_image(self.mapa, -7.66)
-        self.skel = self.get_skeleton(rotated)
+        angle = list(rospy.get_param('origin'))[2]
+        self.img_map = rotate_image(img_map, angle*180/np.pi)
         
-        alpha = 0.3
-        costmap = self.skel.copy()
-        for i in range(1,4):
-            blur = cv2.GaussianBlur(costmap,(10*i-1,10*i-1),20)
-            _, th = cv2.threshold(blur, 2, 255, cv2.THRESH_BINARY)        
-            costmap = cv2.addWeighted(th, alpha, costmap, 1-alpha, 0.0)
-        
-        alpha = 0.6
-        _, th = cv2.threshold(rotated, 245, 255, cv2.THRESH_BINARY)
-        
-        costmap = cv2.addWeighted(th, 1-alpha, costmap, alpha, 0.0)
-        costmap = costmap /255.0*100.0
-        
-        cm = OccupancyGrid()
-        cm.header = grid_map.header       
-        cm.info = grid_map.info
-        
-        cm.data = costmap.flatten().astype(np.uint8)
-        
-        
-        self.pub_costmap.publish(cm)
+        self.thin = self.get_thinnig(self.img_map)
 
 
 if __name__ == '__main__':

@@ -25,6 +25,7 @@
     <arg name="robot_name" value="kobuki"/>
 
     <param name="robot_description" command="$(find xacro)/xacro '$(find kobuki_description)/urdf/kobuki_standalone.urdf.xacro'" />
+    <rosparam command="load" file="$(find kobuki_navigation)/map/map.yaml"/>
 
     <node pkg="gazebo_ros" type="spawn_model" name="spawn_$(arg robot_name)" args="
             -x $(arg x) -y $(arg y) -Y $(arg yaw)
@@ -54,8 +55,6 @@
 
     <!-- ************************************************************************ -->
     <!-- Map server node -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
-
-    
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />    
 
 </launch>

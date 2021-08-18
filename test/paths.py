@@ -8,7 +8,7 @@ import networkx as nx
 def get_skeleton(image):
     _, th = cv2.threshold(image, 245, 255, cv2.THRESH_BINARY)        
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_OPEN, (3,3)) 
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)) 
     op = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel)
 
     skel = cv2.ximgproc.thinning(op)
@@ -56,41 +56,26 @@ def rotate_image(image, angle):
 if __name__ == "__main__":   
     image = cv2.imread('map/map.pgm', 0)
     rotated = rotate_image(image, -7.66)
-    skel = get_skeleton(image)
     
-    alpha = 0.3
-    costmap = skel.copy()
-    for i in range(1,4):
-        blur = cv2.GaussianBlur(costmap,(10*i-1,10*i-1),20)
-        _, th = cv2.threshold(blur, 2, 255, cv2.THRESH_BINARY)        
-        costmap = cv2.addWeighted(th, alpha, costmap, 1-alpha, 0.0)
     
-    alpha = 0.6
-    _, th = cv2.threshold(rotated, 245, 255, cv2.THRESH_BINARY)
-    costmap = cv2.addWeighted(th, 1-alpha, costmap, alpha, 0.0)
+    skel = get_skeleton(rotated)    
     
-    x_0, y_0 = [500,508]
     
-    x_f = np.random.randint(487) + 270
-    y_f = np.random.randint(448) + 363
-    
-    base = cv2.dilate(skel,None,iterations=4)
+    base = cv2.dilate(skel,None,iterations=12)
     path = cv2.cvtColor(base,cv2.COLOR_GRAY2RGB)
-    # path[x_0,y_0,:] = [0,0,255]
-    # path[x_f,y_f,:] = [0,255,0]
+     
     
-    
-    corners = cv2.cornerHarris(skel,3,3,0.042)   
+    corners = cv2.cornerHarris(skel,4,3,0.04)   
     corners = cv2.dilate(corners, None)
-    _, corners = cv2.threshold(corners,0.01*corners.max(),255,cv2.THRESH_BINARY)
+    _, corners = cv2.threshold(corners,0.001,255,cv2.THRESH_BINARY)
     corners = np.uint8(corners)
     
     contours, _ = cv2.findContours(corners,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     
-    
     # path[corners>0.0]=[0,255,0]
     # cv2.drawContours(path,contours,-1,(255,0,0),1)
 
+    G = nx.Graph()     
     points = []
     for i, c in enumerate(contours):
         # calculate moments for each contour
@@ -100,19 +85,19 @@ if __name__ == "__main__":
         cX = int(round(M["m10"] / M["m00"]))
         cY = int(round(M["m01"] / M["m00"]))
         
-        path[cY,cX]=[0,0,255]
+        path[cY,cX]=[0,255,0]
+        G.add_node(i, pos=(cX,cY))
         points.append((cX,cY))
         font                   = cv2.FONT_HERSHEY_SIMPLEX
         fontScale              = 0.4
         fontColor              = (0,0,255)
         thickness              = 1
         
-        path = cv2.putText(path, str(i), (cX,cY), font, fontScale, fontColor, thickness)
+        #path = cv2.putText(path, str(i), (cX,cY), font, fontScale, fontColor, thickness)
         
         
     
-    G = nx.Graph()
-        
+    
     noBlack = cv2.countNonZero(cv2.cvtColor(path,cv2.COLOR_BGR2GRAY))
     for i, p1 in enumerate(points):
         for j, p2 in enumerate(points):
@@ -125,17 +110,64 @@ if __name__ == "__main__":
                 # path = cv2.line(path, p1, p2, (234,0,234), 1)
                 G.add_edge(i,j,weight=np.hypot(p1[0]-p2[0], p1[1]-p2[1]))
                 
-    plan = nx.shortest_path(G,30,19)
+    print G.nodes
     
+    x_0, y_0 = [492,500]
+    
+    x_f = np.random.randint(487) + 277
+    y_f = np.random.randint(448) + 368
+    
+    path[y_0+1,x_0+1] = (255,0,0)
+    path[y_f+1,x_f+1] = (255,0,0)
+    
+    _, th = cv2.threshold(rotated, 245, 255, cv2.THRESH_BINARY)   
+    
+    ero = cv2.erode(th,None,iterations=7)
+    
+    th = ero.copy()
+    noBlack = cv2.countNonZero(th)
+    for i, p in enumerate(points):
+        test_img = cv2.line(th.copy(), (x_0,y_0), p, 234, 1)
+        
+        # Recount to see if the images are the same
+        if cv2.countNonZero(test_img) == noBlack: 
+            # path = cv2.line(path, p1, p2, (234,0,234), 1)
+            G.add_edge('p_0',i,weight=np.hypot(p[0]-x_0, y_0-p[1]))
+            
+    for i, p in enumerate(points):
+        test_img = cv2.line(th.copy(), (x_f,y_f), p, 234, 1)
+        
+        # Recount to see if the images are the same
+        if cv2.countNonZero(test_img) == noBlack: 
+            # path = cv2.line(path, p1, p2, (234,0,234), 1)
+            G.add_edge('p_f',i,weight=np.hypot(p[0]-x_f, y_f-p[1]))
+    
+    
+    
+    plan = nx.shortest_path(G,'p_0','p_f')
+    print plan
+    
+    print points
+    print G.nodes.data('pos')
+    print G.nodes[0]['pos']
     for i in range(len(plan)-1):
-        path = cv2.line(path, points[plan[i]], points[plan[i+1]], (251,229,78), 3)
+        if i == 0:
+            path = cv2.line(path, (x_0,y_0), points[plan[i+1]], (251,229,78), 1)
+        elif i == len(plan)-2:
+            path = cv2.line(path, points[plan[i]], (x_f,y_f), (251,229,78), 1)
+        else:
+            path = cv2.line(path, points[plan[i]], points[plan[i+1]], (251,229,78), 1)
 
     # cv2.imshow("Original", image)
     # cv2.imshow("Rotada -7.66 grados", rotated)
     # cv2.imshow("Esqueleto", skel)
     # cv2.imshow("costmap", costmap)
-    cv2.imshow('path',path)
-    #cv2.imshow("d",base_img)
+    #cv2.imshow('path',ero)
+    
+    _, th = cv2.threshold(rotated, 245, 255, cv2.THRESH_BINARY)
+    base_img = cv2.addWeighted( cv2.cvtColor(th,cv2.COLOR_GRAY2RGB), 0.5, path, 0.5, 0.0)
+    #base_img = cv2.addWeighted( cv2.cvtColor(ero,cv2.COLOR_GRAY2RGB), 0.5, path, 0.5, 0.0)
+    cv2.imshow("d",base_img)
     
     # cv2.imwrite('map/rotated.pgm', rotated)
     cv2.waitKey() 

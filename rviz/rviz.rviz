@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Status1
+        - /Grid1
         - /Map1/Position1
       Splitter Ratio: 0.47058823704719543
     Tree Height: 687
@@ -105,7 +106,7 @@ Visualization Manager:
     - Alpha: 0.20000000298023224
       Cell Size: 1
       Class: rviz/Grid
-      Color: 160; 160; 164
+      Color: 0; 255; 0
       Enabled: true
       Line Style:
         Line Width: 0.029999999329447746

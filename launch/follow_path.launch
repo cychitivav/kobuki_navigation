@@ -4,7 +4,7 @@
     <!-- Define world -->
     <arg name="world_name" default="$(find kobuki_control)worlds/maze.world" />
     <!-- Define map -->
-    <arg name="map_file" default="$(find kobuki_navigation)/map/rotated.yaml" />
+    <arg name="map_file" default="$(find kobuki_navigation)/map/map.yaml" />
 
     <!-- ************************************************************************ -->
     <!-- Launch Gazebo-->
@@ -25,8 +25,6 @@
     <arg name="robot_name" value="kobuki"/>
 
     <param name="robot_description" command="$(find xacro)/xacro '$(find kobuki_description)/urdf/kobuki_standalone.urdf.xacro'" />
-    <rosparam command="load" file="$(find kobuki_navigation)/map/map.yaml"/>
-
     <node pkg="gazebo_ros" type="spawn_model" name="spawn_$(arg robot_name)" args="
             -x $(arg x) -y $(arg y) -Y $(arg yaw)
             -urdf -param robot_description 

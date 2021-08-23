@@ -5,17 +5,6 @@ from matplotlib import pyplot as plt
 import networkx as nx
 
 
-def get_skeleton(image):
-    _, th = cv2.threshold(image, 245, 255, cv2.THRESH_BINARY)        
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)) 
-    op = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel)
-
-    skel = cv2.ximgproc.thinning(op)
-    
-    return skel
-
-
 def rotate_image(image, angle):
     image_center = tuple(np.array(image.shape[0:2]) / 2)
     rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1)
@@ -59,13 +48,31 @@ if __name__ == "__main__":
     
     #cv2.imwrite('map/rotated.pgm', rotated)
     
+    _, th = cv2.threshold(rotated, 245, 255, cv2.THRESH_BINARY)        
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3)) 
+    op = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel)
+    skel = cv2.ximgproc.thinning(op)
     
-    skel = get_skeleton(rotated)    
+    plt.figure(figsize=(20,20))    
+    plt.subplot(1,3,1)
+    plt.imshow(image, cmap='gray')
+    plt.axis('off')
+    plt.title('Original')
+    
+    plt.subplot(1,3,2)
+    plt.imshow(rotated, cmap='gray')
+    plt.axis('off')
+    plt.title('Rotada')
+    
+    plt.subplot(1,3,3)
+    plt.imshow(skel, cmap='gray')
+    plt.axis('off')
+    plt.title('Adelgazada')
+    
     
     
     base = cv2.dilate(skel,None,iterations=12)
-    path = cv2.cvtColor(base,cv2.COLOR_GRAY2RGB)
-     
+    path = cv2.cvtColor(base,cv2.COLOR_GRAY2RGB)   
     
     corners = cv2.cornerHarris(skel,7,7,0.04)   
     corners = cv2.dilate(corners, None)
@@ -95,82 +102,93 @@ if __name__ == "__main__":
         fontColor              = (0,0,255)
         thickness              = 1
         
-        #path = cv2.putText(path, str(i), (cX,cY), font, fontScale, fontColor, thickness)
+        path = cv2.putText(path, str(i), (cX,cY), font, fontScale, fontColor, thickness)
         
-        
+    plt.figure(figsize=(20,20))    
+    plt.subplot(1,2,1)
+    plt.imshow(base, cmap='gray')
+    plt.axis('off')
+    plt.title('Imagen base')
+    
+    plt.subplot(1,2,2)
+    plt.imshow(path, cmap='gray')
+    plt.axis('off')
+    plt.title('Esquinas')
     
     
-    # noBlack = cv2.countNonZero(cv2.cvtColor(path,cv2.COLOR_BGR2GRAY))
-    # for i, p1 in enumerate(points):
-    #     for j, p2 in enumerate(points):
-    #         if p1 == p2: continue
+    noBlack = cv2.countNonZero(cv2.cvtColor(path,cv2.COLOR_BGR2GRAY))
+    for i, p1 in enumerate(points):
+        for j, p2 in enumerate(points):
+            if p1 == p2: continue
             
-    #         test_img = cv2.line(path.copy(), p1, p2, (234,0,234), 1)
+            test_img = cv2.line(path.copy(), p1, p2, (234,0,234), 1)
             
-    #         # Recount to see if the images are the same
-    #         if cv2.countNonZero(cv2.cvtColor(test_img,cv2.COLOR_BGR2GRAY)) == noBlack: 
-    #             # path = cv2.line(path, p1, p2, (234,0,234), 1)
-    #             G.add_edge(i,j,weight=np.hypot(p1[0]-p2[0], p1[1]-p2[1]))
+            # Recount to see if the images are the same
+            if cv2.countNonZero(cv2.cvtColor(test_img,cv2.COLOR_BGR2GRAY)) == noBlack: 
+                # path = cv2.line(path, p1, p2, (234,0,234), 1)
+                G.add_edge(i,j,weight=np.hypot(p1[0]-p2[0], p1[1]-p2[1]))
                 
-    # print G.nodes
+    plt.figure(figsize=(20,20))
+    nx.draw(G, with_labels=True)
     
-    # x_0, y_0 = [492,500]
+    x_0, y_0 = [492,500]
     
-    # x_f = np.random.randint(487) + 277
-    # y_f = np.random.randint(448) + 368
+    x_f = np.random.randint(487) + 277
+    y_f = np.random.randint(448) + 368
     
-    # path[y_0+1,x_0+1] = (255,0,0)
-    # path[y_f+1,x_f+1] = (255,0,0)
+    path[y_0+1,x_0+1] = (255,0,0)
+    path[y_f+1,x_f+1] = (255,0,0)
     
-    # _, th = cv2.threshold(rotated, 245, 255, cv2.THRESH_BINARY)   
+    _, th = cv2.threshold(rotated, 245, 255, cv2.THRESH_BINARY)   
     
-    # ero = cv2.erode(th,None,iterations=7)
+    ero = cv2.erode(th,None,iterations=7)
     
-    # th = ero.copy()
-    # noBlack = cv2.countNonZero(th)
-    # for i, p in enumerate(points):
-    #     test_img = cv2.line(th.copy(), (x_0,y_0), p, 234, 1)
+    th = ero.copy()
+    noBlack = cv2.countNonZero(th)
+    for i, p in enumerate(points):
+        test_img = cv2.line(th.copy(), (x_0,y_0), p, 234, 1)
         
-    #     # Recount to see if the images are the same
-    #     if cv2.countNonZero(test_img) == noBlack: 
-    #         # path = cv2.line(path, p1, p2, (234,0,234), 1)
-    #         G.add_edge('p_0',i,weight=np.hypot(p[0]-x_0, y_0-p[1]))
+        # Recount to see if the images are the same
+        if cv2.countNonZero(test_img) == noBlack: 
+            # path = cv2.line(path, p1, p2, (234,0,234), 1)
+            G.add_edge('p_0',i,weight=np.hypot(p[0]-x_0, y_0-p[1]))
             
-    # for i, p in enumerate(points):
-    #     test_img = cv2.line(th.copy(), (x_f,y_f), p, 234, 1)
+    for i, p in enumerate(points):
+        test_img = cv2.line(th.copy(), (x_f,y_f), p, 234, 1)
         
-    #     # Recount to see if the images are the same
-    #     if cv2.countNonZero(test_img) == noBlack: 
-    #         # path = cv2.line(path, p1, p2, (234,0,234), 1)
-    #         G.add_edge('p_f',i,weight=np.hypot(p[0]-x_f, y_f-p[1]))
+        # Recount to see if the images are the same
+        if cv2.countNonZero(test_img) == noBlack: 
+            # path = cv2.line(path, p1, p2, (234,0,234), 1)
+            G.add_edge('p_f',i,weight=np.hypot(p[0]-x_f, y_f-p[1]))
     
     
     
-    # plan = nx.shortest_path(G,'p_0','p_f')
-    # print plan
+    plan = nx.shortest_path(G,'p_0','p_f')
+    print plan
     
-    # print points
-    # print G.nodes.data('pos')
-    # print G.nodes[0]['pos']
-    # for i in range(len(plan)-1):
-    #     if i == 0:
-    #         path = cv2.line(path, (x_0,y_0), points[plan[i+1]], (251,229,78), 1)
-    #     elif i == len(plan)-2:
-    #         path = cv2.line(path, points[plan[i]], (x_f,y_f), (251,229,78), 1)
-    #     else:
-    #         path = cv2.line(path, points[plan[i]], points[plan[i+1]], (251,229,78), 1)
 
-    # # cv2.imshow("Original", image)
-    cv2.imshow("Rotada -7.66 grados", rotated)
-    cv2.imshow("Esqueleto", skel)
-    # # cv2.imshow("costmap", costmap)
-    cv2.imshow('path',path)
+    for i in range(len(plan)-1):
+        if i == 0:
+            path = cv2.line(path, (x_0,y_0), points[plan[i+1]], (251,229,78), 1)
+        elif i == len(plan)-2:
+            path = cv2.line(path, points[plan[i]], (x_f,y_f), (251,229,78), 1)
+        else:
+            path = cv2.line(path, points[plan[i]], points[plan[i+1]], (251,229,78), 1)
+            
     
-    # _, th = cv2.threshold(rotated, 245, 255, cv2.THRESH_BINARY)
-    # base_img = cv2.addWeighted( cv2.cvtColor(th,cv2.COLOR_GRAY2RGB), 0.5, path, 0.5, 0.0)
-    # #base_img = cv2.addWeighted( cv2.cvtColor(ero,cv2.COLOR_GRAY2RGB), 0.5, path, 0.5, 0.0)
-    # cv2.imshow("d",base_img)
+    base_img = cv2.addWeighted( cv2.cvtColor(ero,cv2.COLOR_GRAY2RGB), 0.5, path, 0.5, 0.0)   
     
-    # cv2.imwrite('map/rotated.pgm', rotated)
-    cv2.waitKey() 
+    
+    plt.figure(figsize=(20,20))    
+    plt.subplot(1,2,1)
+    plt.imshow(ero, cmap='gray')
+    plt.axis('off')
+    plt.title('Imagen erosionada')
+    
+    plt.subplot(1,2,2)
+    plt.imshow(base_img)
+    plt.axis('off')
+    plt.title('Camino disponible')
+
+    plt.show()
     

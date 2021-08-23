@@ -4,7 +4,7 @@
     <!-- Define world -->
     <arg name="world_name" default="$(find kobuki_control)worlds/maze.world" />
     <!-- Define map -->
-    <arg name="map_file" default="$(find kobuki_navigation)/map/map.yaml" />
+    <arg name="map_file" default="$(find kobuki_navigation)/map/rotated.yaml" />
 
     <!-- ************************************************************************ -->
     <!-- Launch Gazebo-->

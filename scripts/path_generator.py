@@ -23,10 +23,9 @@ class generator:
         self.tfBuffer = tf2_ros.Buffer()
         listener = tf2_ros.TransformListener(self.tfBuffer)
 
-        self.pub = rospy.Publisher('/plan', Path, queue_size=10)
+        self.pub = rospy.Publisher('/plan', Path, queue_size=1)
 
-        self.sub = rospy.Subscriber(
-            '/clicked_point', PointStamped, self.calc_path)
+        self.sub = rospy.Subscriber('/clicked_point', PointStamped, self.calc_path)
         self.sub_map = rospy.Subscriber('/map', OccupancyGrid, self.get_map)
 
     def calc_path(self, goal):
@@ -137,16 +136,14 @@ class generator:
                 row = []
 
         img_map = np.uint8(np.array(img_map)/100.0 * -255.0 + 255.0)
-        img_map = cv2.flip(img_map, 0)
-
-        self.img_map = img_map.copy()
+        self.img_map = cv2.flip(img_map, 0)
 
         # Get thinned map
         self.thin = self.get_thinning(self.img_map)
 
         # Get graph
-        base_map = cv2.dilate(self.thin, None, iterations=11)
         corners = self.get_corners(self.thin)
+        base_map = cv2.dilate(self.thin, None, iterations=11)        
         no_black = cv2.countNonZero(base_map)
         
         for i, p1 in enumerate(corners):
@@ -166,12 +163,10 @@ class generator:
         corner_regions = cv2.cornerHarris(img, 7, 7, 0.04)
         corner_regions = cv2.dilate(corner_regions, None)
         
-        _, corner_regions = cv2.threshold(
-            corner_regions, 0.001, 255, cv2.THRESH_BINARY)
+        _, corner_regions = cv2.threshold(corner_regions, 0.001, 255, cv2.THRESH_BINARY)
 
         corner_regions = np.uint8(corner_regions)
-        contours, _ = cv2.findContours(
-            corner_regions, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(corner_regions, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         corners = []
         for i, c in enumerate(contours):
